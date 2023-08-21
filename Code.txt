@@ -1,0 +1,513 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[7]:
+
+
+#importing libraries
+get_ipython().run_line_magic('matplotlib', 'inline')
+import numpy as np
+import pandas as pd
+import matplotlib
+from matplotlib import pyplot
+import sklearn.datasets
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from collections import Counter
+import category_encoders as ce
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score,recall_score,precision_score,confusion_matrix,classification_report
+
+
+# In[8]:
+
+
+#loading the dataset
+df=pd.read_csv("bank_dataset.csv")
+df.rename(columns={'y':'target'},inplace=True)
+df
+
+
+# In[9]:
+
+
+df.shape
+
+
+# In[10]:
+
+
+#columns of the dataset
+df.columns
+
+
+# In[11]:
+
+
+#checking for null values
+df.isnull().sum()
+
+
+# In[12]:
+
+
+#checking datatypes of elements of each column
+df.dtypes
+
+
+# In[14]:
+
+
+#checking default as "yes"
+default_loan_data = df[(df['default'] == "yes")]
+default_loan_data.head()
+
+
+# In[15]:
+
+
+print(len(default_loan_data))
+
+
+# In[16]:
+
+
+#checking default as "no"
+no_default_loan_data = df[(df['default'] == "no")]
+no_default_loan_data.head()
+
+
+# In[17]:
+
+
+print(len(no_default_loan_data))
+
+
+# In[18]:
+
+
+#checking default as "yes" for married
+married_default_data = default_loan_data[(default_loan_data['marital'] == "married")]
+married_default_data.head()
+
+
+# In[19]:
+
+
+print(len(married_default_data))
+
+
+# In[20]:
+
+
+#checking default as "yes" for single
+single_default_data = default_loan_data[(default_loan_data['marital'] == "single")]
+single_default_data.head()
+
+
+# In[21]:
+
+
+#checking default as "yes" for divorced
+divorced_default_data = default_loan_data[(default_loan_data['marital'] == "divorced")]
+divorced_default_data.head()
+
+
+# In[22]:
+
+
+print(len(single_default_data))
+
+
+# In[23]:
+
+
+print(len(divorced_default_data))
+
+
+# In[24]:
+
+
+#checking default as "no" for married
+married_no_default_data = no_default_loan_data[(no_default_loan_data['marital'] =="married")]
+married_no_default_data.head()
+
+
+# In[25]:
+
+
+print(len(married_no_default_data))
+
+
+# In[26]:
+
+
+#checking default as "no" for single
+single_no_default_data = no_default_loan_data[(no_default_loan_data['marital'] == "single")]
+single_no_default_data.head()
+
+
+# In[27]:
+
+
+print(len(single_no_default_data))
+
+
+# In[28]:
+
+
+#checking default as "no" for divorced
+divorced_no_default_data = no_default_loan_data[(no_default_loan_data['marital'] == "divorced")]
+divorced_no_default_data.head()
+
+
+# In[29]:
+
+
+print(len(divorced_no_default_data))
+
+
+# In[30]:
+
+
+#checking default as "yes" for unknown
+employed_default_data = default_loan_data[(default_loan_data['job'] != "unknown")]
+employed_default_data.head()
+
+
+# In[31]:
+
+
+print(len(employed_default_data))
+
+
+# In[32]:
+
+
+#checking default as "no" for unemployed
+employed_no_default_data = no_default_loan_data[(no_default_loan_data['job'] != "unemployed")]
+employed_no_default_data.head()
+
+
+# In[33]:
+
+
+print(len(employed_no_default_data))
+
+
+# In[34]:
+
+
+unemployed_single_default_data = single_default_data[(single_default_data['job'] =="unknown")]
+print(len(unemployed_single_default_data))
+
+
+# In[35]:
+
+
+def dataset_info(df):
+    if isinstance(df,pd.DataFrame):
+        is_na=df.isna().sum().sum()
+        print("Datatype shape=",df.shape)
+        print("any null values=",is_na,"\n")
+        col=df.columns
+        datatype=df.dtypes
+        #uniq=df.nuinque()
+        print("\033[1m","s.no","column","datatype","\n")
+        for i in range(len(df.columns)):
+            print("%d%10s%10s"%(i+1,col[i],datatype[i]))
+
+
+# In[36]:
+
+
+dataset_info(df)
+
+
+# In[56]:
+
+
+import matplotlib
+from matplotlib import pyplot
+get_ipython().run_line_magic('matplotlib', 'inline')
+pyplot.figure(figsize=(14,6))
+pyplot.hist(default_loan_data["age"])
+pyplot.show()
+
+
+# In[37]:
+
+
+import matplotlib
+from matplotlib import pyplot
+get_ipython().run_line_magic('matplotlib', 'inline')
+pyplot.figure(figsize=(14,6))
+pyplot.hist(no_default_loan_data["age"])
+pyplot.show()
+
+
+# In[58]:
+
+
+import matplotlib
+from matplotlib import pyplot
+get_ipython().run_line_magic('matplotlib', 'inline')
+pyplot.figure(figsize=(14,6))
+pyplot.hist(single_default_data["age"])
+pyplot.show()
+
+
+# In[38]:
+
+
+
+import matplotlib
+from matplotlib import pyplot
+get_ipython().run_line_magic('matplotlib', 'inline')
+pyplot.figure(figsize=(12,6))
+pyplot.hist(single_no_default_data["age"])
+pyplot.show()
+
+
+# In[39]:
+
+
+df.describe()
+
+
+# In[40]:
+
+
+catcols=df.select_dtypes(include=['object']).columns.to_list()
+numcols=[col for col in df.columns if col not in catcols]
+print('Numeric columns: {}'.format(numcols))
+print()
+print('Categorical Columns: {}'.format(catcols))
+
+
+# In[41]:
+
+
+g=sns.FacetGrid(data=df,col='target',height=3,aspect=1.2)
+g.map(sns.histplot,'age',bins=20)
+pyplot.show()
+
+
+# In[65]:
+
+
+g=sns.FacetGrid(data=df,col='y',height=4,aspect=1.2)
+g.map(sns.distplot,'balance')
+pyplot.show()
+
+
+# In[66]:
+
+
+pyplot.figure(figsize=(10,5))
+sns.countplot(x='day',data=df)
+
+
+# In[67]:
+
+
+g=sns.FacetGrid(data=df,col='y',height=4,aspect=1.3)
+g.map(sns.distplot,'pdays')
+
+
+# In[68]:
+
+
+g=sns.FacetGrid(data=df,col='y',height=4,aspect=1.3)
+g.map(sns.distplot,'previous')
+
+
+# In[71]:
+
+
+pyplot.figure(figsize=(10,4))
+ax=sns.countplot(x='job',data=df)
+pyplot.xticks(rotation='vertical')
+
+for p in ax.patches:
+    percentage = '{:.1f}%'.format(100 * p.get_height()/len(df))
+    x = p.get_x() + p.get_width()
+    y = p.get_height()
+    ax.annotate(percentage, (x, y),ha='center')
+pyplot.show()
+
+
+# In[72]:
+
+
+pyplot.figure(figsize=(8,4))
+ax=sns.countplot(x='poutcome',data=df)
+for p in ax.patches:
+    percentage = '{:.1f}%'.format(100 * p.get_height()/len(df))#analysis of previous outcome
+    x = p.get_x() + p.get_width()
+    y = p.get_height()
+    ax.annotate(percentage, (x, y),ha='center')
+
+
+# In[73]:
+
+
+pyplot.figure(figsize=(6,4))
+ax=sns.countplot(x='y',data=df)
+for p in ax.patches:#analysis of y whether customer have deposited or not
+    percentage = '{:.1f}%'.format(100 * p.get_height()/len(df))
+    x = p.get_x() + p.get_width()
+    y = p.get_height()
+    ax.annotate(percentage, (x, y),ha='center')
+
+
+# In[42]:
+
+
+df['target']=df['target'].map({'no':0,'yes':1})
+x=df.drop(['target'],axis=1)
+y=df['target']
+X_train,X_test,Y_train,Y_test=train_test_split(x,y,test_size=0.2)
+print("elements in X_train:",X_train.shape)
+print("elements in X_test:",X_test.shape)
+print("elements in Y_train:",Y_train.shape)
+print("elements in Y_test:",Y_test.shape)
+
+
+# In[43]:
+
+
+X_train
+
+
+# In[44]:
+
+
+Y_train
+
+
+# In[45]:
+
+
+encoder=ce.OrdinalEncoder(cols=['job','marital','education','default','housing','loan','contact','month','duration','poutcome'])
+X_train=encoder.fit_transform(X_train)
+X_test=encoder.fit_transform(X_test)
+X_train.keys
+
+
+# In[46]:
+
+
+Y_train
+
+
+# In[47]:
+
+
+import re
+no_hyphens = re.sub('-','','blue-collars')
+df
+
+
+# In[48]:
+
+
+import re
+no_hyphens = re.sub('-','','self-employed')
+df
+
+
+# In[49]:
+
+
+df_new=df['job']
+convert=float(df_new)
+print(convert)
+
+
+# In[53]:
+
+
+#logistic regression
+from sklearn.linear_model import LogisticRegression
+log=LogisticRegression()
+log.fit(X_train,Y_train)
+Y_predicted=log.predict(X_test)
+print(f"accuracy of the model is {accuracy_score(Y_test,Y_predicted)*100}")
+
+
+# In[52]:
+
+
+#random forest classifier
+from sklearn.ensemble import RandomForestClassifier
+RF=RandomForestClassifier()
+RF.fit(X_train,Y_train)
+Y_pred=RF.predict(X_test)
+Accuracy=accuracy_score(Y_test,Y_pred)
+conf=confusion_matrix(Y_test,Y_pred)
+report=classification_report(Y_test,Y_pred)
+print(f"Accuracy score of random forest Algorithm is {Accuracy*100}%")
+print(f"Confusion Matrix:\n {conf}")
+print(f"Classification report is as follows :\n {report} ")
+
+
+# In[55]:
+
+
+fig,ax=pyplot.subplots(1,df['poutcome'].nunique(),figsize=(12,10))
+for i,col in enumerate(df['poutcome'].unique()):
+    ax[i].pie(x=df[df['poutcome']==col]['target'].value_counts(),
+              labels=df[df['poutcome']==col]['target'].value_counts().index,autopct='%1.1f%%')
+    ax[i].set_title(col)
+
+
+# In[74]:
+
+
+def week(day):
+    if day<5:#the threshold value which we are considering here is 5 days for the person contacted last.
+        return 'Week1'
+    elif day<12:
+        return 'Week2'#categorising them on the basis of weeks for better understanding of campaign success.
+    elif day<20:
+        return 'Week3'
+    else:
+        return 'Week4'
+    
+df['week']=df['day'].map(week)    
+
+
+# In[77]:
+
+
+fig,ax=pyplot.subplots(1,df['week'].nunique(),figsize=(10,15))
+for i,col in enumerate(df['week'].unique()):
+    ax[i].pie(x=df[df['week']==col]['target'].value_counts(),
+              labels=df[df['week']==col]['target'].value_counts().index,autopct='%1.1f%%')
+    ax[i].set_title(col)#df.value_count() returns the unique values
+
+
+# In[70]:
+
+
+def success(Pdays):
+    if Pdays<15:
+        print("success")
+    else:
+        print("failure")
+success(17)
+
+        
+
+
+# In[73]:
+
+
+df.value_counts()
+
+
+
+
+
+
